@@ -327,24 +327,6 @@ export function BreathingExercise() {
         </p>
       </div>
 
-      {/* Cycle indicator */}
-      <div style={{ position: 'absolute', bottom: '32px', left: '50%', transform: 'translateX(-50%)' }}>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {[...Array(totalCycles)].map((_, i) => (
-            <div
-              key={i}
-              style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                transition: 'all 0.3s ease',
-                background: i + 1 <= state.cycle ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.2)'
-              }}
-            />
-          ))}
-        </div>
-      </div>
-
       {/* Medical Disclaimer */}
       <div style={{ 
         position: 'absolute', 
@@ -366,6 +348,24 @@ export function BreathingExercise() {
           <br />
           These materials are not a substitute for professional medical advice, diagnosis, or treatment. If you or someone you know is experiencing emotional distress or a mental health emergency, please contact a licensed healthcare provider or call 988 for immediate support in the U.S.
         </p>
+      </div>
+
+      {/* Cycle indicator */}
+      <div style={{ position: 'absolute', bottom: '60px', left: '50%', transform: 'translateX(-50%)' }}>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {[...Array(totalCycles)].map((_, i) => (
+            <div
+              key={i}
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                transition: 'all 0.3s ease',
+                background: i + 1 <= state.cycle ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.2)'
+              }}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Breathing method indicator */}
