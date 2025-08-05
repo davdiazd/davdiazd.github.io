@@ -1,0 +1,3 @@
+# This file ensures the audio directory is created in the repository
+# Users can add their custom breathing.mp4 file here
+# See AUDIO_SETUP.md for detailed instructions

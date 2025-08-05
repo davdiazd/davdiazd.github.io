@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 
-type BreathingPhase = 'inhale' | 'exhale' | 'pause';
+type BreathingPhase = 'inhale' | 'exhale';
 
 interface BreathingState {
   phase: BreathingPhase;
@@ -18,14 +18,64 @@ export function BreathingExercise() {
     timeInPhase: 0
   });
 
+  const [isAudioEnabled, setIsAudioEnabled] = useState(false);
+  const [audioLoaded, setAudioLoaded] = useState(false);
+  
+  // Single audio ref for the 10-second looping MP4
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   // Phase durations in milliseconds - 4-6 breathing method
   const phaseDurations = {
     'inhale': 4000,  // 4 seconds
-    'exhale': 6000,  // 6 seconds
-    'pause': 1000    // 1 second between cycles
+    'exhale': 6000   // 6 seconds
   };
 
-  const totalCycles = 4;
+  const totalCycles = 3; // 3 cycles = 30 seconds total
+
+  // Initialize audio element
+  useEffect(() => {
+    // Create audio element with your custom 10-second MP4 file
+    // Place your audio file in the public/audio/ directory
+    audioRef.current = new Audio('/audio/breathing.mp4');
+    audioRef.current.preload = 'auto';
+    audioRef.current.volume = 0.5;
+    audioRef.current.loop = true; // Loop the 10-second audio continuously
+
+    // Check if audio file is loaded
+    const checkAudioLoaded = () => {
+      if (audioRef.current?.readyState === 4) {
+        setAudioLoaded(true);
+      }
+    };
+
+    // Add event listener for when audio is loaded
+    audioRef.current.addEventListener('canplaythrough', checkAudioLoaded);
+
+    // Cleanup function
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.removeEventListener('canplaythrough', checkAudioLoaded);
+      }
+    };
+  }, []);
+
+  // Toggle audio on/off
+  const toggleAudio = () => {
+    if (!audioLoaded || !audioRef.current) return;
+
+    const newAudioState = !isAudioEnabled;
+    setIsAudioEnabled(newAudioState);
+    
+    if (newAudioState) {
+      // Start the looping audio
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(console.warn);
+    } else {
+      // Stop the audio
+      audioRef.current.pause();
+    }
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -43,17 +93,9 @@ export function BreathingExercise() {
               nextPhase = 'exhale';
               break;
             case 'exhale':
-              if (prevState.cycle < totalCycles) {
-                nextPhase = 'pause';
-              } else {
-                // Reset to beginning for seamless loop
-                nextPhase = 'inhale';
-                nextCycle = 1;
-              }
-              break;
-            case 'pause':
+              // Go directly to next inhale
               nextPhase = 'inhale';
-              nextCycle = prevState.cycle + 1;
+              nextCycle = prevState.cycle < totalCycles ? prevState.cycle + 1 : 1; // Reset to 1 for seamless loop
               break;
           }
 
@@ -84,11 +126,11 @@ export function BreathingExercise() {
         const easeInProgress = 1 - Math.pow(1 - progress, 2); // Ease in
         return 1 + (0.7 * easeInProgress); // Scale from 1 to 1.7
       case 'exhale':
-        // Slow smooth contraction over 6 seconds
-        const easeOutProgress = 1 - Math.pow(progress, 0.3); // Very slow ease out
-        return 1.7 - (0.7 * (1 - easeOutProgress)); // Scale from 1.7 to 1
-      case 'pause':
-        return 1;
+        // Smooth, consistent contraction over 6 seconds
+        const linearProgress = progress;
+        const gentleEaseProgress = 1 - Math.pow(1 - progress, 1.2);
+        const blendedProgress = (linearProgress * 0.7) + (gentleEaseProgress * 0.3);
+        return 1.7 - (0.7 * blendedProgress); // Scale from 1.7 to 1
     }
   };
 
@@ -101,8 +143,6 @@ export function BreathingExercise() {
         return 0.6 + (0.4 * progress); // Gradually increase to 1.0
       case 'exhale':
         return 1 - (0.4 * progress); // Gradually decrease to 0.6
-      case 'pause':
-        return 0.6;
     }
   };
 
@@ -113,14 +153,11 @@ export function BreathingExercise() {
         return 'Inhale';
       case 'exhale':
         return 'Now exhale slowly...';
-      case 'pause':
-        return '';
     }
   };
 
   // Text opacity based on phase timing
   const getTextOpacity = () => {
-    if (state.phase === 'pause') return 0;
     const progress = state.timeInPhase / phaseDurations[state.phase];
     if (progress < 0.15) return progress / 0.15; // Fade in over first 15%
     if (progress > 0.85) return (1 - progress) / 0.15; // Fade out over last 15%
@@ -176,6 +213,76 @@ export function BreathingExercise() {
             }}
           />
         ))}
+      </div>
+
+      {/* Audio control button */}
+      <div className="absolute top-8 right-8 z-10">
+        <button
+          onClick={toggleAudio}
+          disabled={!audioLoaded}
+          className={`flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-sm border transition-all duration-300 ${
+            audioLoaded 
+              ? 'bg-white/10 border-white/20 hover:bg-white/15 cursor-pointer' 
+              : 'bg-white/5 border-white/10 cursor-not-allowed opacity-50'
+          }`}
+          style={{
+            boxShadow: isAudioEnabled && audioLoaded
+              ? '0 0 20px rgba(147, 112, 219, 0.4)' 
+              : '0 0 10px rgba(255, 255, 255, 0.1)'
+          }}
+          aria-label={isAudioEnabled ? 'Disable audio' : 'Enable audio'}
+        >
+          {!audioLoaded ? (
+            // Loading icon
+            <svg 
+              width="20" 
+              height="20" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+              className="text-white/60 animate-spin"
+            >
+              <path d="M21 12a9 9 0 11-6.219-8.56"/>
+            </svg>
+          ) : isAudioEnabled ? (
+            // Audio on icon
+            <svg 
+              width="20" 
+              height="20" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+              className="text-white/90"
+            >
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+            </svg>
+          ) : (
+            // Audio off icon
+            <svg 
+              width="20" 
+              height="20" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+              className="text-white/90"
+            >
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <line x1="22" y1="9" x2="16" y2="15"></line>
+              <line x1="16" y1="9" x2="22" y2="15"></line>
+            </svg>
+          )}
+        </button>
       </div>
 
       {/* Main breathing orb */}
@@ -266,6 +373,16 @@ export function BreathingExercise() {
           <p className="text-xs opacity-60 mt-1" style={{ fontSize: '12px' }}>
             4s inhale • 6s exhale
           </p>
+          {isAudioEnabled && audioLoaded && (
+            <p className="text-xs opacity-50 mt-1" style={{ fontSize: '11px' }}>
+              🎵 Audio enabled
+            </p>
+          )}
+          {!audioLoaded && (
+            <p className="text-xs opacity-50 mt-1" style={{ fontSize: '11px' }}>
+              Loading audio...
+            </p>
+          )}
         </div>
       </div>
     </div>
