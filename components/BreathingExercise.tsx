@@ -345,6 +345,29 @@ export function BreathingExercise() {
         </div>
       </div>
 
+      {/* Medical Disclaimer */}
+      <div style={{ 
+        position: 'absolute', 
+        bottom: '8px', 
+        left: '50%', 
+        transform: 'translateX(-50%)',
+        maxWidth: '90%',
+        textAlign: 'center'
+      }}>
+        <p style={{
+          color: 'rgba(255,255,255,0.5)',
+          fontSize: '10px',
+          lineHeight: '1.3',
+          margin: 0,
+          fontFamily: 'var(--font-family)',
+          fontWeight: '300'
+        }}>
+          The tools, tips, and resources provided by Modak are for informational and educational purposes only. They are not intended to diagnose, treat, cure, or prevent any mental health condition.
+          <br />
+          These materials are not a substitute for professional medical advice, diagnosis, or treatment. If you or someone you know is experiencing emotional distress or a mental health emergency, please contact a licensed healthcare provider or call 988 for immediate support in the U.S.
+        </p>
+      </div>
+
       {/* Breathing method indicator */}
       <div style={{ position: 'absolute', top: '32px', left: '50%', transform: 'translateX(-50%)' }}>
         <div style={{ color: 'rgba(255,255,255,0.7)', textAlign: 'center' }}>
