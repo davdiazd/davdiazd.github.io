@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 
 type BreathingPhase = 'inhale' | 'exhale';
 
@@ -34,9 +34,9 @@ export function BreathingExercise() {
 
   // Initialize audio element
   useEffect(() => {
-    // Create audio element with your custom 10-second MP4 file
+    // Create audio element with your custom 10-second MP3 file
     // Place your audio file in the public/audio/ directory
-    audioRef.current = new Audio('/audio/breathing.mp4');
+    audioRef.current = new Audio('/audio/breathing.mp3');
     audioRef.current.preload = 'auto';
     audioRef.current.volume = 0.5;
     audioRef.current.loop = true; // Loop the 10-second audio continuously
@@ -169,114 +169,79 @@ export function BreathingExercise() {
   const textOpacity = getTextOpacity();
 
   return (
-    <div className="relative w-full h-screen overflow-hidden">
-      {/* Calming gradient background */}
-      <div 
-        className="absolute inset-0"
-        style={{
-          background: `
-            radial-gradient(ellipse at center, 
-              rgba(75, 0, 130, 0.3) 0%, 
-              rgba(25, 25, 112, 0.5) 30%, 
-              rgba(72, 61, 139, 0.7) 60%, 
-              rgba(25, 25, 112, 0.9) 100%
-            ),
-            linear-gradient(45deg,
-              #191970 0%,
-              #483d8b 25%,
-              #6a5acd 50%,
-              #4b0082 75%,
-              #2f1b69 100%
-            )
-          `
-        }}
-      />
-
+    <div style={{
+      position: 'relative',
+      width: '100vw',
+      height: '100vh',
+      overflow: 'hidden',
+      background: `
+        radial-gradient(ellipse at center, 
+          rgba(75, 0, 130, 0.3) 0%, 
+          rgba(25, 25, 112, 0.5) 30%, 
+          rgba(72, 61, 139, 0.7) 60%, 
+          rgba(25, 25, 112, 0.9) 100%
+        ),
+        linear-gradient(45deg,
+          #191970 0%, #483d8b 25%, #6a5acd 50%, #4b0082 75%, #2f1b69 100%
+        )
+      `
+    }}>
       {/* Subtle background particles/stars */}
-      <div className="absolute inset-0">
+      <div style={{ position: 'absolute', inset: 0 }}>
         {[...Array(50)].map((_, i) => (
-          <motion.div
+          <div
             key={i}
-            className="absolute w-1 h-1 bg-white rounded-full opacity-20"
             style={{
+              position: 'absolute',
+              width: '4px',
+              height: '4px',
+              background: 'white',
+              borderRadius: '50%',
+              opacity: 0.2,
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              opacity: [0.1, 0.3, 0.1],
-              scale: [0.5, 1, 0.5],
-            }}
-            transition={{
-              duration: 4 + Math.random() * 4,
-              repeat: Infinity,
-              delay: Math.random() * 4,
+              animation: `twinkle ${4 + Math.random() * 4}s ease-in-out infinite`,
+              animationDelay: `${Math.random() * 4}s`
             }}
           />
         ))}
       </div>
 
       {/* Audio control button */}
-      <div className="absolute top-8 right-8 z-10">
+      <div style={{ position: 'absolute', top: '32px', right: '32px', zIndex: 10 }}>
         <button
           onClick={toggleAudio}
           disabled={!audioLoaded}
-          className={`flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-sm border transition-all duration-300 ${
-            audioLoaded 
-              ? 'bg-white/10 border-white/20 hover:bg-white/15 cursor-pointer' 
-              : 'bg-white/5 border-white/10 cursor-not-allowed opacity-50'
-          }`}
           style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            backdropFilter: 'blur(4px)',
+            border: audioLoaded ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.1)',
+            background: audioLoaded ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
+            cursor: audioLoaded ? 'pointer' : 'not-allowed',
+            opacity: audioLoaded ? 1 : 0.5,
+            transition: 'all 0.3s ease',
             boxShadow: isAudioEnabled && audioLoaded
               ? '0 0 20px rgba(147, 112, 219, 0.4)' 
               : '0 0 10px rgba(255, 255, 255, 0.1)'
           }}
-          aria-label={isAudioEnabled ? 'Disable audio' : 'Enable audio'}
         >
           {!audioLoaded ? (
-            // Loading icon
-            <svg 
-              width="20" 
-              height="20" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-              className="text-white/60 animate-spin"
-            >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'rgba(255,255,255,0.6)', animation: 'spin 1s linear infinite' }}>
               <path d="M21 12a9 9 0 11-6.219-8.56"/>
             </svg>
           ) : isAudioEnabled ? (
-            // Audio on icon
-            <svg 
-              width="20" 
-              height="20" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-              className="text-white/90"
-            >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'rgba(255,255,255,0.9)' }}>
               <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
               <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
               <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
             </svg>
           ) : (
-            // Audio off icon
-            <svg 
-              width="20" 
-              height="20" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-              className="text-white/90"
-            >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'rgba(255,255,255,0.9)' }}>
               <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
               <line x1="22" y1="9" x2="16" y2="15"></line>
               <line x1="16" y1="9" x2="22" y2="15"></line>
@@ -286,105 +251,132 @@ export function BreathingExercise() {
       </div>
 
       {/* Main breathing orb */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <motion.div
-          className="relative"
-          animate={{
-            scale: scale,
-          }}
-          transition={{
-            duration: 0.1,
-            ease: "easeOut",
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div
+          style={{
+            position: 'relative',
+            transform: `scale(${scale})`,
+            transition: 'transform 0.1s ease-out'
           }}
         >
           {/* Main orb */}
           <div
-            className="w-48 h-48 rounded-full bg-gradient-to-br from-white/20 to-purple-200/30 backdrop-blur-sm"
             style={{
+              width: '192px',
+              height: '192px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(147,112,219,0.3) 100%)',
+              backdropFilter: 'blur(4px)',
               boxShadow: `
                 0 0 ${60 * glowIntensity}px rgba(147, 112, 219, ${0.6 * glowIntensity}),
                 0 0 ${120 * glowIntensity}px rgba(147, 112, 219, ${0.4 * glowIntensity}),
                 0 0 ${200 * glowIntensity}px rgba(147, 112, 219, ${0.2 * glowIntensity}),
                 inset 0 0 ${40 * glowIntensity}px rgba(255, 255, 255, ${0.1 * glowIntensity})
-              `,
+              `
             }}
           />
           
           {/* Inner glow */}
-          <motion.div
-            className="absolute inset-4 rounded-full bg-gradient-to-br from-white/30 to-purple-100/20"
-            animate={{
+          <div
+            style={{
+              position: 'absolute',
+              inset: '16px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(147,112,219,0.2) 100%)',
               opacity: glowIntensity * 0.8,
+              transition: 'opacity 0.1s ease'
             }}
-            transition={{ duration: 0.1 }}
           />
           
           {/* Core light */}
-          <motion.div
-            className="absolute inset-1/3 rounded-full bg-white/40"
-            animate={{
+          <div
+            style={{
+              position: 'absolute',
+              inset: '33%',
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.4)',
               opacity: glowIntensity,
-              scale: 0.8 + (glowIntensity * 0.4),
+              transform: `scale(${0.8 + (glowIntensity * 0.4)})`,
+              transition: 'all 0.1s ease'
             }}
-            transition={{ duration: 0.1 }}
           />
-        </motion.div>
+        </div>
       </div>
 
       {/* Text overlay */}
-      <motion.div
-        className="absolute inset-0 flex items-center justify-center pointer-events-none"
-        style={{ paddingTop: '320px' }}
-      >
-        <motion.p
-          className="text-white/90 text-center tracking-wide"
-          style={{
-            opacity: textOpacity,
-            fontSize: '18px',
-            fontWeight: '300',
-            letterSpacing: '0.05em',
-            textShadow: '0 2px 10px rgba(0,0,0,0.3)',
-          }}
-        >
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        pointerEvents: 'none',
+        paddingTop: '320px'
+      }}>
+        <p style={{
+          color: 'rgba(255,255,255,0.9)',
+          textAlign: 'center',
+          letterSpacing: '0.05em',
+          fontSize: '18px',
+          fontWeight: '300',
+          textShadow: '0 2px 10px rgba(0,0,0,0.3)',
+          opacity: textOpacity,
+          transition: 'opacity 0.1s ease'
+        }}>
           {getPhaseText()}
-        </motion.p>
-      </motion.div>
+        </p>
+      </div>
 
       {/* Cycle indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
-        <div className="flex space-x-2">
+      <div style={{ position: 'absolute', bottom: '32px', left: '50%', transform: 'translateX(-50%)' }}>
+        <div style={{ display: 'flex', gap: '8px' }}>
           {[...Array(totalCycles)].map((_, i) => (
             <div
               key={i}
-              className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                i + 1 <= state.cycle ? 'bg-white/60' : 'bg-white/20'
-              }`}
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                transition: 'all 0.3s ease',
+                background: i + 1 <= state.cycle ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.2)'
+              }}
             />
           ))}
         </div>
       </div>
 
       {/* Breathing method indicator */}
-      <div className="absolute top-8 left-1/2 transform -translate-x-1/2">
-        <div className="text-white/70 text-center">
-          <p className="text-sm tracking-wide" style={{ fontSize: '14px', fontWeight: '300' }}>
+      <div style={{ position: 'absolute', top: '32px', left: '50%', transform: 'translateX(-50%)' }}>
+        <div style={{ color: 'rgba(255,255,255,0.7)', textAlign: 'center' }}>
+          <p style={{ fontSize: '14px', fontWeight: '300', margin: 0, letterSpacing: '0.05em' }}>
             4-6 Breathing Method
           </p>
-          <p className="text-xs opacity-60 mt-1" style={{ fontSize: '12px' }}>
+          <p style={{ fontSize: '12px', opacity: 0.6, margin: '4px 0 0 0' }}>
             4s inhale • 6s exhale
           </p>
           {isAudioEnabled && audioLoaded && (
-            <p className="text-xs opacity-50 mt-1" style={{ fontSize: '11px' }}>
+            <p style={{ fontSize: '11px', opacity: 0.5, margin: '4px 0 0 0' }}>
               🎵 Audio enabled
             </p>
           )}
           {!audioLoaded && (
-            <p className="text-xs opacity-50 mt-1" style={{ fontSize: '11px' }}>
+            <p style={{ fontSize: '11px', opacity: 0.5, margin: '4px 0 0 0' }}>
               Loading audio...
             </p>
           )}
         </div>
       </div>
+
+      <style>{`
+        @keyframes twinkle {
+          0%, 100% { opacity: 0.1; transform: scale(0.5); }
+          50% { opacity: 0.3; transform: scale(1); }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
