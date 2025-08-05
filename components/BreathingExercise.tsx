@@ -43,38 +43,26 @@ export function BreathingExercise() {
 
     // Check if audio file is loaded
     const checkAudioLoaded = () => {
-      console.log('Audio loaded successfully');
       if (audioRef.current?.readyState === 4) {
         setAudioLoaded(true);
       }
     };
 
-    // Add error handling
-    const handleAudioError = (error: Event) => {
-      console.error('Audio loading error:', error);
-      setAudioLoaded(false);
-    };
-
     // Add event listener for when audio is loaded
     audioRef.current.addEventListener('canplaythrough', checkAudioLoaded);
-    audioRef.current.addEventListener('error', handleAudioError);
 
     // Cleanup function
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.removeEventListener('canplaythrough', checkAudioLoaded);
-        audioRef.current.removeEventListener('error', handleAudioError);
       }
     };
   }, []);
 
   // Toggle audio on/off
   const toggleAudio = () => {
-    if (!audioLoaded || !audioRef.current) {
-      console.log('Audio not loaded, cannot toggle');
-      return;
-    }
+    if (!audioLoaded || !audioRef.current) return;
 
     const newAudioState = !isAudioEnabled;
     setIsAudioEnabled(newAudioState);
@@ -82,10 +70,7 @@ export function BreathingExercise() {
     if (newAudioState) {
       // Start the looping audio
       audioRef.current.currentTime = 0;
-      audioRef.current.play().catch((error) => {
-        console.error('Failed to play audio:', error);
-        setIsAudioEnabled(false);
-      });
+      audioRef.current.play().catch(console.warn);
     } else {
       // Stop the audio
       audioRef.current.pause();
