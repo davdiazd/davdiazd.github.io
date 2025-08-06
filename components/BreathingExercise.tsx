@@ -39,7 +39,9 @@ export function BreathingExercise() {
       console.log('Initializing audio element...');
       // Create audio element with your custom 10-second MP3 file
       // Place your audio file in the public/audio/ directory
-      audioRef.current = new Audio('/breathing-app/audio/breathing.mp3');
+      const isProduction = window.location.hostname !== 'localhost';
+      const audioPath = isProduction ? '/breathing-app/audio/breathing.mp3' : '/audio/breathing.mp3';
+      audioRef.current = new Audio(audioPath);
       audioRef.current.preload = 'auto';
       audioRef.current.volume = 0.5;
       audioRef.current.loop = true; // Loop the 10-second audio continuously
@@ -59,10 +61,15 @@ export function BreathingExercise() {
         setError('Audio failed to load');
         // Try alternative paths if first one fails
         if (audioRef.current) {
-          const alternativePaths = [
+          const isProduction = window.location.hostname !== 'localhost';
+          const alternativePaths = isProduction ? [
             '/breathing-app/audio/breathing.mp3',
+            '/audio/breathing.mp3',
+            './audio/breathing.mp3'
+          ] : [
+            '/audio/breathing.mp3',
             './audio/breathing.mp3',
-            '/audio/breathing.mp3'
+            '/breathing-app/audio/breathing.mp3'
           ];
           
           const currentSrc = audioRef.current.src;
