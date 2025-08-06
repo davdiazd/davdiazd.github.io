@@ -20,6 +20,7 @@ export function BreathingExercise() {
 
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
   const [audioLoaded, setAudioLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   // Single audio ref for the 10-second looping MP4
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -34,66 +35,76 @@ export function BreathingExercise() {
 
   // Initialize audio element
   useEffect(() => {
-    console.log('Initializing audio element...');
-    // Create audio element with your custom 10-second MP3 file
-    // Place your audio file in the public/audio/ directory
-    audioRef.current = new Audio('/breathing-app/audio/breathing.mp3');
-    audioRef.current.preload = 'auto';
-    audioRef.current.volume = 0.5;
-    audioRef.current.loop = true; // Loop the 10-second audio continuously
+    try {
+      console.log('Initializing audio element...');
+      // Create audio element with your custom 10-second MP3 file
+      // Place your audio file in the public/audio/ directory
+      audioRef.current = new Audio('/breathing-app/audio/breathing.mp3');
+      audioRef.current.preload = 'auto';
+      audioRef.current.volume = 0.5;
+      audioRef.current.loop = true; // Loop the 10-second audio continuously
 
-    // Check if audio file is loaded
-    const checkAudioLoaded = () => {
-      console.log('Audio loaded successfully');
-      if (audioRef.current?.readyState === 4) {
-        setAudioLoaded(true);
-      }
-    };
-
-    // Add error handling
-    const handleAudioError = (error: Event) => {
-      console.error('Audio loading error:', error);
-      // Try alternative paths if first one fails
-      if (audioRef.current) {
-        const alternativePaths = [
-          '/breathing-app/audio/breathing.mp3',
-          './audio/breathing.mp3',
-          '/audio/breathing.mp3'
-        ];
-        
-        const currentSrc = audioRef.current.src;
-        const currentPathIndex = alternativePaths.findIndex(path => currentSrc.includes(path));
-        const nextPathIndex = (currentPathIndex + 1) % alternativePaths.length;
-        
-        console.log(`Trying alternative audio path: ${alternativePaths[nextPathIndex]}`);
-        audioRef.current.src = alternativePaths[nextPathIndex];
-        audioRef.current.load();
-      }
-    };
-
-    // Add event listener for when audio is loaded
-    audioRef.current.addEventListener('canplaythrough', checkAudioLoaded);
-    audioRef.current.addEventListener('error', handleAudioError);
-
-    // Add timeout to handle slow loading
-    const timeoutId = setTimeout(() => {
-      if (!audioLoaded && audioRef.current) {
-        console.log('Audio loading timeout, checking readyState...');
-        if (audioRef.current.readyState >= 2) { // HAVE_CURRENT_DATA
+      // Check if audio file is loaded
+      const checkAudioLoaded = () => {
+        console.log('Audio loaded successfully');
+        if (audioRef.current?.readyState === 4) {
           setAudioLoaded(true);
+          setError(null);
         }
-      }
-    }, 5000); // 5 second timeout
+      };
 
-    // Cleanup function
-    return () => {
-      clearTimeout(timeoutId);
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.removeEventListener('canplaythrough', checkAudioLoaded);
-        audioRef.current.removeEventListener('error', handleAudioError);
-      }
-    };
+      // Add error handling
+      const handleAudioError = (error: Event) => {
+        console.error('Audio loading error:', error);
+        setError('Audio failed to load');
+        // Try alternative paths if first one fails
+        if (audioRef.current) {
+          const alternativePaths = [
+            '/breathing-app/audio/breathing.mp3',
+            './audio/breathing.mp3',
+            '/audio/breathing.mp3'
+          ];
+          
+          const currentSrc = audioRef.current.src;
+          const currentPathIndex = alternativePaths.findIndex(path => currentSrc.includes(path));
+          const nextPathIndex = (currentPathIndex + 1) % alternativePaths.length;
+          
+          console.log(`Trying alternative audio path: ${alternativePaths[nextPathIndex]}`);
+          audioRef.current.src = alternativePaths[nextPathIndex];
+          audioRef.current.load();
+        }
+      };
+
+      // Add event listener for when audio is loaded
+      audioRef.current.addEventListener('canplaythrough', checkAudioLoaded);
+      audioRef.current.addEventListener('error', handleAudioError);
+
+      // Add timeout to handle slow loading
+      const timeoutId = setTimeout(() => {
+        if (!audioLoaded && audioRef.current) {
+          console.log('Audio loading timeout, checking readyState...');
+          if (audioRef.current.readyState >= 2) { // HAVE_CURRENT_DATA
+            setAudioLoaded(true);
+            setError(null);
+          } else {
+            setError('Audio loading timed out');
+          }
+        }
+      }, 5000); // 5 second timeout
+
+      // Cleanup function
+      return () => {
+        clearTimeout(timeoutId);
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.removeEventListener('canplaythrough', checkAudioLoaded);
+          audioRef.current.removeEventListener('error', handleAudioError);
+        }
+      };
+    } catch (err) {
+      console.error('Error initializing audio:', err);
+      setError('Failed to initialize audio');
+    }
   }, []);
 
   // Toggle audio on/off
@@ -362,6 +373,34 @@ export function BreathingExercise() {
           {getPhaseText()}
         </p>
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <div style={{ 
+          position: 'absolute', 
+          top: '100px', 
+          left: '50%', 
+          transform: 'translateX(-50%)',
+          maxWidth: '90%',
+          textAlign: 'center',
+          zIndex: 20
+        }}>
+          <p style={{
+            color: 'rgba(255,255,255,0.8)',
+            fontSize: '12px',
+            lineHeight: '1.3',
+            margin: 0,
+            fontFamily: 'var(--font-family)',
+            fontWeight: '400',
+            background: 'rgba(255,0,0,0.1)',
+            padding: '8px 12px',
+            borderRadius: '6px',
+            border: '1px solid rgba(255,0,0,0.3)'
+          }}>
+            ⚠️ {error} - Audio may not work properly
+          </p>
+        </div>
+      )}
 
       {/* Medical Disclaimer */}
       <div style={{ 
