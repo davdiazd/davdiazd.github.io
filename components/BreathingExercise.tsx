@@ -112,6 +112,7 @@ export function BreathingExercise() {
         if (audioRef.current?.readyState === 4) {
           setAudioLoaded(true);
           setError(null);
+          console.log('MP3 audio ready to play');
         }
       };
 
@@ -294,8 +295,8 @@ export function BreathingExercise() {
   // Text opacity based on phase timing - smoother transitions
   const getTextOpacity = () => {
     const progress = state.timeInPhase / phaseDurations[state.phase];
-    // Only fade in at the very beginning, no fade out
-    if (progress < 0.1) return progress / 0.1; // Quick fade in over first 10%
+    // Smooth fade in at the beginning, no fade out to prevent unwanted text
+    if (progress < 0.15) return progress / 0.15; // Fade in over first 15%
     return 1; // Stay fully visible throughout the phase
   };
 
