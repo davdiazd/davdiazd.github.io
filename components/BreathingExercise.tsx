@@ -66,6 +66,100 @@ export function BreathingExercise() {
     }
   };
 
+  // Generate a simple breathing audio file
+  const generateBreathingAudio = async () => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const sampleRate = audioContext.sampleRate;
+      const duration = 10; // 10 seconds
+      const numSamples = sampleRate * duration;
+      
+      // Create a simple breathing pattern
+      const audioBuffer = audioContext.createBuffer(1, numSamples, sampleRate);
+      const channelData = audioBuffer.getChannelData(0);
+      
+      for (let i = 0; i < numSamples; i++) {
+        const time = i / sampleRate;
+        const phase = (time % 10) / 10; // 10-second cycle
+        
+        // Create breathing pattern: inhale (0-0.4), exhale (0.4-1.0)
+        let amplitude = 0;
+        if (phase < 0.4) {
+          // Inhale: gradual increase
+          amplitude = Math.sin(phase * Math.PI * 2.5) * 0.3;
+        } else {
+          // Exhale: gradual decrease
+          amplitude = Math.sin((phase - 0.4) * Math.PI * 1.67) * 0.2;
+        }
+        
+        // Add some harmonics for a more natural sound
+        const fundamental = Math.sin(2 * Math.PI * 220 * time) * amplitude;
+        const harmonic1 = Math.sin(2 * Math.PI * 440 * time) * amplitude * 0.3;
+        const harmonic2 = Math.sin(2 * Math.PI * 330 * time) * amplitude * 0.2;
+        
+        channelData[i] = fundamental + harmonic1 + harmonic2;
+      }
+      
+      // Convert to WAV format (smaller than MP3)
+      const wavBlob = audioBufferToWav(audioBuffer);
+      const audioUrl = URL.createObjectURL(wavBlob);
+      
+      // Create audio element with the generated file
+      audioRef.current = new Audio(audioUrl);
+      audioRef.current.loop = true;
+      audioRef.current.volume = 0.3;
+      
+      console.log('Generated breathing audio file successfully');
+      setAudioLoaded(true);
+      setError(null);
+      
+    } catch (err) {
+      console.error('Failed to generate breathing audio:', err);
+      createFallbackAudio();
+    }
+  };
+
+  // Helper function to convert AudioBuffer to WAV
+  const audioBufferToWav = (buffer: AudioBuffer) => {
+    const numChannels = buffer.numberOfChannels;
+    const sampleRate = buffer.sampleRate;
+    const length = buffer.length;
+    const arrayBuffer = new ArrayBuffer(44 + length * numChannels * 2);
+    const view = new DataView(arrayBuffer);
+    
+    // WAV header
+    const writeString = (offset: number, string: string) => {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
+    };
+    
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + length * numChannels * 2, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * numChannels * 2, true);
+    view.setUint16(32, numChannels * 2, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
+    view.setUint32(40, length * numChannels * 2, true);
+    
+    // Audio data
+    const offset = 44;
+    for (let i = 0; i < length; i++) {
+      for (let channel = 0; channel < numChannels; channel++) {
+        const sample = Math.max(-1, Math.min(1, buffer.getChannelData(channel)[i]));
+        view.setInt16(offset + (i * numChannels + channel) * 2, sample * 0x7FFF, true);
+      }
+    }
+    
+    return new Blob([arrayBuffer], { type: 'audio/wav' });
+  };
+
   // Start fallback audio with breathing rhythm
   const startFallbackAudio = () => {
     if (!oscillatorRef.current || !audioContextRef.current) return;
@@ -119,28 +213,9 @@ export function BreathingExercise() {
       // Add error handling
       const handleAudioError = (error: Event) => {
         console.error('Audio loading error:', error);
-        setError('MP3 audio failed to load - trying alternatives');
-        // Try alternative paths if first one fails
-        if (audioRef.current) {
-          const isProduction = window.location.hostname !== 'localhost';
-          const alternativePaths = isProduction ? [
-            '/audio/breathing.mp3',
-            './audio/breathing.mp3',
-            '/breathing-app/audio/breathing.mp3'
-          ] : [
-            '/audio/breathing.mp3',
-            './audio/breathing.mp3',
-            '/breathing-app/audio/breathing.mp3'
-          ];
-          
-          const currentSrc = audioRef.current.src;
-          const currentPathIndex = alternativePaths.findIndex(path => currentSrc.includes(path));
-          const nextPathIndex = (currentPathIndex + 1) % alternativePaths.length;
-          
-          console.log(`Trying alternative audio path: ${alternativePaths[nextPathIndex]}`);
-          audioRef.current.src = alternativePaths[nextPathIndex];
-          audioRef.current.load();
-        }
+        setError('MP3 failed - generating breathing audio...');
+        // Try generated audio instead of alternative paths
+        generateBreathingAudio();
       };
 
       // Add event listener for when audio is loaded
@@ -155,9 +230,10 @@ export function BreathingExercise() {
             setAudioLoaded(true);
             setError(null);
           } else {
-            setError('Audio loading timed out - trying fallback');
-            // Try fallback audio only after MP3 completely fails
-            createFallbackAudio();
+            console.log('MP3 failed to load, trying generated audio...');
+            setError('MP3 failed - generating breathing audio...');
+            // Try generated audio first, then fallback tone
+            generateBreathingAudio();
           }
         }
       }, 10000); // 10 second timeout to give MP3 more time
@@ -543,7 +619,7 @@ export function BreathingExercise() {
           </p>
           {isAudioEnabled && audioLoaded && (
             <p style={{ fontSize: '11px', opacity: 0.5, margin: '4px 0 0 0' }}>
-              🎵 Audio enabled {usingFallbackAudio && '(tone)'}
+              🎵 Audio enabled {usingFallbackAudio && '(tone)'} {!usingFallbackAudio && audioRef.current?.src?.includes('blob:') && '(generated)'}
             </p>
           )}
           {!audioLoaded && (
