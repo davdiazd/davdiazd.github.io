@@ -34,6 +34,7 @@ export function BreathingExercise() {
 
   // Initialize audio element
   useEffect(() => {
+    console.log('Initializing audio element...');
     // Create audio element with your custom 10-second MP3 file
     // Place your audio file in the public/audio/ directory
     audioRef.current = new Audio('/breathing-app/audio/breathing.mp3');
@@ -52,9 +53,20 @@ export function BreathingExercise() {
     // Add error handling
     const handleAudioError = (error: Event) => {
       console.error('Audio loading error:', error);
-      // Try alternative path if first one fails
+      // Try alternative paths if first one fails
       if (audioRef.current) {
-        audioRef.current.src = '/breathing-app/audio/breathing.mp3';
+        const alternativePaths = [
+          '/breathing-app/audio/breathing.mp3',
+          './audio/breathing.mp3',
+          '/audio/breathing.mp3'
+        ];
+        
+        const currentSrc = audioRef.current.src;
+        const currentPathIndex = alternativePaths.findIndex(path => currentSrc.includes(path));
+        const nextPathIndex = (currentPathIndex + 1) % alternativePaths.length;
+        
+        console.log(`Trying alternative audio path: ${alternativePaths[nextPathIndex]}`);
+        audioRef.current.src = alternativePaths[nextPathIndex];
         audioRef.current.load();
       }
     };
@@ -63,8 +75,19 @@ export function BreathingExercise() {
     audioRef.current.addEventListener('canplaythrough', checkAudioLoaded);
     audioRef.current.addEventListener('error', handleAudioError);
 
+    // Add timeout to handle slow loading
+    const timeoutId = setTimeout(() => {
+      if (!audioLoaded && audioRef.current) {
+        console.log('Audio loading timeout, checking readyState...');
+        if (audioRef.current.readyState >= 2) { // HAVE_CURRENT_DATA
+          setAudioLoaded(true);
+        }
+      }
+    }, 5000); // 5 second timeout
+
     // Cleanup function
     return () => {
+      clearTimeout(timeoutId);
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.removeEventListener('canplaythrough', checkAudioLoaded);
