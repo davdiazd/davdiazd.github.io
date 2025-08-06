@@ -36,7 +36,7 @@ export function BreathingExercise() {
   useEffect(() => {
     // Create audio element with your custom 10-second MP3 file
     // Place your audio file in the public/audio/ directory
-    audioRef.current = new Audio('./audio/breathing.mp3');
+    audioRef.current = new Audio('/breathing-app/audio/breathing.mp3');
     audioRef.current.preload = 'auto';
     audioRef.current.volume = 0.5;
     audioRef.current.loop = true; // Loop the 10-second audio continuously
@@ -54,7 +54,7 @@ export function BreathingExercise() {
       console.error('Audio loading error:', error);
       // Try alternative path if first one fails
       if (audioRef.current) {
-        audioRef.current.src = '/audio/breathing.mp3';
+        audioRef.current.src = '/breathing-app/audio/breathing.mp3';
         audioRef.current.load();
       }
     };
