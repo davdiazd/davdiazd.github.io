@@ -21,9 +21,12 @@ export function BreathingExercise() {
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
   const [audioLoaded, setAudioLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [usingFallbackAudio, setUsingFallbackAudio] = useState(false);
   
   // Single audio ref for the 10-second looping MP4
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const oscillatorRef = useRef<OscillatorNode | null>(null);
 
   // Phase durations in milliseconds - 4-6 breathing method
   const phaseDurations = {
@@ -32,6 +35,57 @@ export function BreathingExercise() {
   };
 
   const totalCycles = 3; // 3 cycles = 30 seconds total
+
+  // Create fallback audio using Web Audio API
+  const createFallbackAudio = () => {
+    try {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      
+      const audioContext = audioContextRef.current;
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(220, audioContext.currentTime); // Lower frequency for calming effect
+      gainNode.gain.setValueAtTime(0.05, audioContext.currentTime); // Very low volume
+      
+      oscillatorRef.current = oscillator;
+      setUsingFallbackAudio(true);
+      setAudioLoaded(true);
+      setError(null);
+      
+      console.log('Fallback audio created successfully');
+    } catch (err) {
+      console.error('Failed to create fallback audio:', err);
+      setError('Audio not available');
+    }
+  };
+
+  // Start fallback audio with breathing rhythm
+  const startFallbackAudio = () => {
+    if (!oscillatorRef.current || !audioContextRef.current) return;
+    
+    const audioContext = audioContextRef.current;
+    const oscillator = oscillatorRef.current;
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    // Create a gentle pulsing effect
+    const now = audioContext.currentTime;
+    gainNode.gain.setValueAtTime(0, now);
+    gainNode.gain.linearRampToValueAtTime(0.03, now + 0.1);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+    
+    oscillator.start();
+    console.log('Fallback audio started with breathing rhythm');
+  };
 
   // Initialize audio element
   useEffect(() => {
@@ -96,6 +150,8 @@ export function BreathingExercise() {
             setError(null);
           } else {
             setError('Audio loading timed out');
+            // Try fallback audio
+            createFallbackAudio();
           }
         }
       }, 5000); // 5 second timeout
@@ -108,27 +164,46 @@ export function BreathingExercise() {
           audioRef.current.removeEventListener('canplaythrough', checkAudioLoaded);
           audioRef.current.removeEventListener('error', handleAudioError);
         }
+        if (oscillatorRef.current) {
+          oscillatorRef.current.stop();
+        }
+        if (audioContextRef.current) {
+          audioContextRef.current.close();
+        }
       };
     } catch (err) {
       console.error('Error initializing audio:', err);
       setError('Failed to initialize audio');
+      // Try fallback audio
+      createFallbackAudio();
     }
   }, []);
 
   // Toggle audio on/off
   const toggleAudio = () => {
-    if (!audioLoaded || !audioRef.current) return;
+    if (!audioLoaded) return;
 
     const newAudioState = !isAudioEnabled;
     setIsAudioEnabled(newAudioState);
     
     if (newAudioState) {
-      // Start the looping audio
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(console.warn);
+      if (usingFallbackAudio && oscillatorRef.current && audioContextRef.current) {
+        // Start fallback audio with breathing rhythm
+        startFallbackAudio();
+      } else if (audioRef.current) {
+        // Start the looping audio
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(console.warn);
+      }
     } else {
-      // Stop the audio
-      audioRef.current.pause();
+      if (usingFallbackAudio && oscillatorRef.current) {
+        // Stop fallback audio
+        oscillatorRef.current.stop();
+        console.log('Fallback audio stopped');
+      } else if (audioRef.current) {
+        // Stop the audio
+        audioRef.current.pause();
+      }
     }
   };
 
@@ -462,7 +537,7 @@ export function BreathingExercise() {
           </p>
           {isAudioEnabled && audioLoaded && (
             <p style={{ fontSize: '11px', opacity: 0.5, margin: '4px 0 0 0' }}>
-              🎵 Audio enabled
+              🎵 Audio enabled {usingFallbackAudio && '(tone)'}
             </p>
           )}
           {!audioLoaded && (
