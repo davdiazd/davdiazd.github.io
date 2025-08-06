@@ -41,6 +41,7 @@ export function BreathingExercise() {
       // Place your audio file in the public/audio/ directory
       const isProduction = window.location.hostname !== 'localhost';
       const audioPath = isProduction ? '/audio/breathing.mp3' : '/audio/breathing.mp3';
+      console.log('Loading audio from:', audioPath);
       audioRef.current = new Audio(audioPath);
       audioRef.current.preload = 'auto';
       audioRef.current.volume = 0.5;
@@ -466,7 +467,7 @@ export function BreathingExercise() {
           )}
           {!audioLoaded && (
             <p style={{ fontSize: '11px', opacity: 0.5, margin: '4px 0 0 0' }}>
-              Loading audio...
+              Audio loading... (breathing exercise works without audio)
             </p>
           )}
         </div>
