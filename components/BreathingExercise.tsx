@@ -97,6 +97,11 @@ export function BreathingExercise() {
       const audioPath = isProduction ? '/audio/breathing.mp3' : '/audio/breathing.mp3';
       console.log('Loading audio from:', audioPath);
       audioRef.current = new Audio(audioPath);
+      
+      // Add additional debugging
+      console.log('Audio element created:', audioRef.current);
+      console.log('Audio src:', audioRef.current.src);
+      console.log('Audio readyState:', audioRef.current.readyState);
       audioRef.current.preload = 'auto';
       audioRef.current.volume = 0.5;
       audioRef.current.loop = true; // Loop the 10-second audio continuously
@@ -113,7 +118,7 @@ export function BreathingExercise() {
       // Add error handling
       const handleAudioError = (error: Event) => {
         console.error('Audio loading error:', error);
-        setError('Audio failed to load');
+        setError('MP3 audio failed to load - trying alternatives');
         // Try alternative paths if first one fails
         if (audioRef.current) {
           const isProduction = window.location.hostname !== 'localhost';
@@ -149,12 +154,12 @@ export function BreathingExercise() {
             setAudioLoaded(true);
             setError(null);
           } else {
-            setError('Audio loading timed out');
-            // Try fallback audio
+            setError('Audio loading timed out - trying fallback');
+            // Try fallback audio only after MP3 completely fails
             createFallbackAudio();
           }
         }
-      }, 5000); // 5 second timeout
+      }, 10000); // 10 second timeout to give MP3 more time
 
       // Cleanup function
       return () => {
@@ -286,12 +291,12 @@ export function BreathingExercise() {
     }
   };
 
-  // Text opacity based on phase timing
+  // Text opacity based on phase timing - smoother transitions
   const getTextOpacity = () => {
     const progress = state.timeInPhase / phaseDurations[state.phase];
-    if (progress < 0.15) return progress / 0.15; // Fade in over first 15%
-    if (progress > 0.85) return (1 - progress) / 0.15; // Fade out over last 15%
-    return 1;
+    // Only fade in at the very beginning, no fade out
+    if (progress < 0.1) return progress / 0.1; // Quick fade in over first 10%
+    return 1; // Stay fully visible throughout the phase
   };
 
   const scale = getOrbScale();
